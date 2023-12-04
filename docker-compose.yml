@@ -3,31 +3,15 @@
 #---------------------------------------------------------------------#
 version: "3"
 services:
-#---------------------------------------------------------------------#
-#                        Backend - TodoApiService                     #
-#---------------------------------------------------------------------#
-#
-# Build backend from Dockerfile
-  todo-api-service:
-    build: ./backend
-    container_name: todo-api-service
-    networks:
-      - proxy
-      - backend
-    labels:
-      - "traefik.http.routers.todo-list-api.rule=Host(`${DOMAIN}`) && Path(`/api/{name:.*}`)"
-      - "traefik.http.routers.todo-list-api.tls=true"
-      - "traefik.http.routers.todo-list-api.tls.certresolver=letsencrypt"
-      - "traefik.docker.network=traefik"
 
-#---------------------------------------------------------------------#
-#                         Frontend - Nginx Web                        #
-#---------------------------------------------------------------------#
+  #---------------------------------------------------------------------#
+  #                         Frontend - Nginx Web                        #
+  #---------------------------------------------------------------------#
   web:
     image: nginx:1.22
     container_name: web-todo-api
     volumes:
-    # Copy user static web files to nginx container
+      # Copy user static web files to nginx container
       - ./frontend/static:/usr/share/nginx/html
     networks:
       - proxy
@@ -35,11 +19,54 @@ services:
       - "traefik.http.routers.todo-list.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.todo-list.tls=true"
       - "traefik.http.routers.todo-list.tls.certresolver=letsencrypt"
-      - "traefik.docker.network=traefik"    
+      - "traefik.docker.network=traefik"
+
+
+  #---------------------------------------------------------------------#
+  #                        Backend - TodoApiService                     #
+  #---------------------------------------------------------------------#
+  #
+  # Build backend from Dockerfile
+  todo-api-service:
+    build: ./backend
+    container_name: todo-api-service
+    networks:
+      - proxy
+      - backend
+    environment:
+      - STORAGE=mysql
+      - MYSQL_HOST=${MYSQL_HOST}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PWD=${MYSQL_PASSWORD}
+      - MYSQL_DB=${MYSQL_DATABASE}
+    depends_on:
+      - db
+    labels:
+      - "traefik.http.routers.todo-list-api.rule=Host(`${DOMAIN}`) && Path(`/api/{name:.*}`)"
+      - "traefik.http.routers.todo-list-api.tls=true"
+      - "traefik.http.routers.todo-list-api.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"
+  db:
+    image: mysql:latest
+    container_name: db-todo-api
+    volumes:
+      - db-volume:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - backend
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+        #- MYSQL_HOST=${MYSQL-HOST}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+
 networks:
   proxy:
     external: true
     name: traefik
   backend:
 
+volumes:
+  db-volume:
 
