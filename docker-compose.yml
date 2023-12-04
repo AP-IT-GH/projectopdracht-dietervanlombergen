@@ -20,6 +20,22 @@ services:
       - "traefik.http.routers.todo-list-api.tls.certresolver=letsencrypt"
       - "traefik.docker.network=traefik"
 
+#---------------------------------------------------------------------#
+#                         Frontend - Nginx Web                        #
+#---------------------------------------------------------------------#
+  web:
+    image: nginx:1.22
+    container_name: web-todo-api
+    volumes:
+    # Copy user static web files to nginx container
+      - ./frontend/static:/usr/share/nginx/html
+    networks:
+      - proxy
+    labels:
+      - "traefik.http.routers.todo-list.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.todo-list.tls=true"
+      - "traefik.http.routers.todo-list.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"    
 networks:
   proxy:
     external: true
