@@ -1,0 +1,29 @@
+#---------------------------------------------------------------------#
+#                        Project opdracht DevOps                      #
+#---------------------------------------------------------------------#
+version: "3"
+services:
+#---------------------------------------------------------------------#
+#                        Backend - TodoApiService                     #
+#---------------------------------------------------------------------#
+#
+# Build backend from Dockerfile
+  todo-api-service:
+    build: ./backend
+    container_name: todo-api-service
+    networks:
+      - proxy
+      - backend
+    labels:
+      - "traefik.http.routers.todo-list-api.rule=Host(`${DOMAIN}`) && Path(`/api/{name:.*}`)"
+      - "traefik.http.routers.todo-list-api.tls=true"
+      - "traefik.http.routers.todo-list-api.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"
+
+networks:
+  proxy:
+    external: true
+    name: traefik
+  backend:
+
+
