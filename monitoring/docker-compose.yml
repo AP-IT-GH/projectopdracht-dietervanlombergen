@@ -18,9 +18,36 @@ services:
       - "traefik.http.routers.portainer.tls=true"
       - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
       - "traefik.docker.network=traefik"
+
+
+#---------------------------------------------------------------------#
+#           Prometheus - Logging your docker services                 #
+#---------------------------------------------------------------------#
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/config.yml:/etc/prometheus/prometheus.yml
+      - prometheus-volume:/prometheus
+    ports: 
+      - 9090:9090
+    networks:
+      - proxy
+        # - monitoring
+    labels:
+      - "traefik.http.routers.prometheus.rule=Host(`${DOMAINPROMETHEUS}`)"
+      - "traefik.http.routers.prometheus.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/passwd"
+      - "traefik.http.routers.prometheus.tls=true"
+      - "traefik.http.routers.prometheus.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"
+
+
+
+
 volumes:
   portainer_data:
-
+  prometheus-volume:
 networks:
   proxy:
     external: true
