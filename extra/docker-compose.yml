@@ -8,17 +8,60 @@ services:
   maildev:
     image: maildev/maildev
     container_name: maildev
+    networks:
+      - odoo
+      - proxy
     labels:
-      - "traefik.http.routers.maildev.entrypoints=websecure"
+      - "traefik.http.routers.maildev.entrypoints=websecure, smtp"
       - "traefik.http.routers.maildev.rule=Host(`${DOMAINMAILDEV}`)"
       - "traefik.http.routers.maildev.service=maildev"
       - "traefik.http.services.maildev.loadbalancer.server.port=1080"
       - "traefik.http.routers.maildev.tls=true"
       - "traefik.http.routers.maildev.tls.certresolver=letsencrypt"
       - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/passwd"
+#---------------------------------------------------------------------#
+#                       Odoo - CRM / ERP SYTEM                        #
+#---------------------------------------------------------------------#
+  web:
+    image: odoo:17.0
+    container_name: odoo
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    volumes:
+      - odoo-web-data:/var/lib/odoo
+      #- ./config:/etc/odoo
+      - ./addons:/mnt/extra-addons
     networks:
       - proxy
+      - odoo
+    labels:
+      - "traefik.http.routers.odoo.rule=Host(`${DOMAIN_ODOO}`)"
+      - "traefik.http.routers.odoo.tls=true"
+      - "traefik.http.routers.odoo.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.services.odoo.loadbalancer.server.port=8069"
+  db:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      - odoo
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - odoo-db-data:/var/lib/postgresql/data/
+      #- /var/lib/postgresql/data
+      #- ./db/scripts:/docker-entrypoint-initdb.d
+volumes:
+  odoo-web-data:
+  odoo-db-data:
+
 networks:
   proxy:
     external: true
     name: traefik
+  odoo:
