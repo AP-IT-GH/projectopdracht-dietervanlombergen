@@ -40,3 +40,79 @@ De API draait in een subfolder /api.
 1. Installeer Traefik als Reverse proxy op je omgeving.
 1. Configureer ssl certificaat aanvraag via LetsEncrypt
 1. Expose de todo applicatie op ```https://<studentnr>.devops-ap.be```
+
+---UITLEG---
+
+# Docker Compose Project README
+
+Dit README-bestand bevat instructies voor het clonen en starten van een Docker Compose-project.
+
+## Prerequisites
+
+- Docker & Docker Compose geïnstalleerd
+- Een werkende Traefik reverse proxy container
+
+## Project gebruiken
+
+2. Clone het project vanuit Git met het volgende commando:
+
+   ```
+   git clone https://github.com/your-username/project.git
+   ```
+
+2. Voeg een .env file toe en pas dit aan met je eigen gegevens. Of gebruik jenkins om je environment variabelen toe te voegen.
+2. Om het programma te starten `docker compose up -d` of doe een build in jenkins
+2. Daarna is de todo-list applicatie op beschikbaar op **my_domain.com**
+2. En de api kan gebruikt worden met _/api/todos_
+
+### Example .env file
+
+```
+DOMAIN=my_domain.com
+MYSQL_DATABASE=todo-list
+MYSQL_HOST=database
+MYSQL_ROOT_PASSWORD=password
+MYSQL_USER=mysql_user
+MYSQL_PASSWORD=password
+```
+
+- **DOMAIN** => hier plaats je eigen domain naam
+- **MYSQL_DATABASE** => hier plaats je de naam van je mysql database
+- **MYSQL_HOST** => hier plaats je de naam van je mysql host
+- **MYSQL_ROOT_PASSWORD** => hier plaats je het mysql root password
+- **MYSQL_USER** => hier plaats je de user waarmee je mysql wilt gebruiken
+- **MYSQL_PASSWORD** => hier plaats je het user password voor de mysql user
+
+### Example pipeline script
+
+```
+pipeline {
+    agent { label 'my_domain.com' }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Clone the git repository
+                git credentialsId: 'git-deploy-key', branch: 'main', url: 'git@github.com:projectopdracht.git'
+            }
+        }
+
+        stage('Build and deploy') {
+            environment{
+                DOMAIN = credentials('project-domain')
+                MYSQL_DATABASE = credentials('project-mysql-database')
+                MYSQL_HOST = credentials('project-mysql-host')
+                MYSQL_ROOT_PASSWORD = credentials('project-mysql-root-password')
+                MYSQL_USER = credentials('project-mysql-user')
+                MYSQL_PASSWORD = credentials('project-mysql-password')
+
+            }
+            steps{
+                // Commands to deploy app on server
+                sh "docker compose up --build -d"
+            }
+        }
+    }
+}
+```
+
