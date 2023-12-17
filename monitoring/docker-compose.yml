@@ -60,7 +60,25 @@ services:
       - "traefik.http.routers.grafana.tls=true"
       - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
       - "traefik.docker.network=traefik"
-
+#---------------------------------------------------------------------#
+#                        Dozzle - Log Viewer                          #
+#---------------------------------------------------------------------#
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9999:9999
+    networks:
+      - proxy
+    labels:
+      - "traefik.http.routers.dozzle.rule=Host(`${DOMAINDOZZLE}`)"
+      - "traefik.http.routers.dozzle.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/passwd"
+      - "traefik.http.routers.dozzle.tls=true"
+      - "traefik.http.routers.dozzle.tls.certresolver=letsencrypt"
+      - "traefik.docker.network=traefik"
 
 volumes:
   portainer_data:
