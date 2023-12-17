@@ -1,0 +1,24 @@
+
+#---------------------------------------------------------------------#
+#                       MailDev - Testing Email                       #
+#---------------------------------------------------------------------#
+
+version: '3'
+services:
+  maildev:
+    image: maildev/maildev
+    container_name: maildev
+    labels:
+      - "traefik.http.routers.maildev.entrypoints=websecure"
+      - "traefik.http.routers.maildev.rule=Host(`${DOMAINMAILDEV}`)"
+      - "traefik.http.routers.maildev.service=maildev"
+      - "traefik.http.services.maildev.loadbalancer.server.port=1080"
+      - "traefik.http.routers.maildev.tls=true"
+      - "traefik.http.routers.maildev.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.auth.basicauth.usersfile=/etc/traefik/passwd"
+    networks:
+      - proxy
+networks:
+  proxy:
+    external: true
+    name: traefik
